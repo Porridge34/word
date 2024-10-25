@@ -39,6 +39,9 @@ void wordCount(char* name) {
                     continue;
                 }
                 getString(word, buffer, indexStart, indexEnd, unfinished); //a function to get the word
+                if (strlen(word) == 1 && word[0] == '\'') { //word can't be a random apostophe
+                    word [0] = '\n'
+                }
                 printf("word: %s length: %d\n", word, indexEnd - indexStart); //the word is now stored in word. Add to hash table (NOT IMPLEMENTED YET)
                 indexStart = i + 1;
                 unfinished = 0; //finished the word
