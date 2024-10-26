@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wvla -fsanitize=address,undefined
+CFLAGS = -g -std=c99 -Wall -Wvla -fsanitize=address,undefined -lm 
 
 all: word
 
