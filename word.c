@@ -167,7 +167,7 @@ void wordCount(char* name) {
         int indexEnd = 0;
         for (int i = 0; i < charsRead; i++) {
             if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' 
-				|| buffer[i] == ','|| buffer[i] == '\n' || isdigit(buffer[i]) {
+				|| buffer[i] == ','|| buffer[i] == '\n' || isdigit(buffer[i])) {
                 
 				indexEnd = i;
                 if (i == 0 || buffer[i - 1] == '.' || buffer[i - 1] == ' ' || buffer[i - 1] == '!' 
