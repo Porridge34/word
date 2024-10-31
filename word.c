@@ -167,17 +167,12 @@ void wordCount(char* name) {
         int indexEnd = 0;
         for (int i = 0; i < charsRead; i++) {
             if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' 
-				|| buffer[i] == ','|| buffer[i] == '\n' || buffer[i] == '0' || buffer[i] == '1' 
-				|| buffer[i] == '2' || buffer[i] == '3' || buffer[i] == '4' || buffer[i] == '5' 
-				|| buffer[i] == '6' || buffer[i] == '7' || buffer[i] == '8' || buffer[i] == '9') {
+				|| buffer[i] == ','|| buffer[i] == '\n' || isdigit(buffer[i]) {
                 
 				indexEnd = i;
                 if (i == 0 || buffer[i - 1] == '.' || buffer[i - 1] == ' ' || buffer[i - 1] == '!' 
 					|| buffer[i - 1] == '?' || buffer[i - 1] == ','|| buffer[i] == '\n' 
-					|| buffer[i - 1] == '"' || buffer[i] == '0' || buffer[i] == '1' 
-					|| buffer[i] == '2' || buffer[i] == '3' || buffer[i] == '4' 
-					|| buffer[i] == '5' || buffer[i] == '6' || buffer[i] == '7'
-					|| buffer[i] == '8' || buffer[i] == '9') {
+					|| buffer[i - 1] == '"' || isdigit(buffer[i - 1])) {
                     
 					indexStart = i + 1;
                     continue;
