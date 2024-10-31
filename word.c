@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <math.h>
+#include <ctype.h>
 
 typedef struct HashNode {
     int count;
@@ -25,7 +26,6 @@ int hash(char* word) {
         hash += word[i] * pow(31, len - (i + 1));
     return hash % tableSize;
 }
-
 
 void resize() {
 	tableSize *= 2;
@@ -72,6 +72,7 @@ void update(char* word, int count) {
 		newNode->word = strdup(word);
 		newNode->count = 1;
 		newNode->next = table[hashNum];
+        printf("word added: %s\n", word);
 
 		table[hashNum] = newNode;
 		tableFullness++;
@@ -118,7 +119,8 @@ void print_hashtable() {
 	{
 		return;
 	}
-    for(int i = 0; i < tableFullness; i++) {
+    bool finished = false;
+    while(!finished) {
 		int maxCount = 0;
 		char* maxWord;
 		for(int i = 0; i < tableSize; i++)
@@ -129,14 +131,16 @@ void print_hashtable() {
 				if((ptr->count > maxCount) || (ptr->count == maxCount && strcmp(maxWord, ptr->word) > 0)) {
 					maxCount = ptr->count;
 					maxWord = ptr->word;
-					update(maxWord, -1);
 				}
 				ptr = ptr->next;
 			}
 		}
-		if(maxCount > 0) {
-			printf("%s %d\n", maxWord, maxCount);
-		}
+		if (maxCount == 0) {
+            finished = true;
+            continue;
+        }
+		printf("%s %d\n", maxWord, maxCount);
+        update(maxWord, -1);
 	}
 	free_hashtable();
 }
@@ -147,6 +151,46 @@ void getString(char* dest, char* src, int start, int end, int unfinished) {
         dest[unfinished + i] = src[start + i];
     }
     dest[end - start + unfinished] = '\0';
+}
+
+void splitHyphen(char* word) {
+    int start = 0;
+    char buffer[200];
+    int end = 0;
+    for (int i = 1; i < strlen(word); i++) {
+        if (word[i] == '-' && word[i - 1] == '-' && end + 1 != start) {
+            end = i - 1;
+            getString(buffer, word, start, end, 0);
+            printf("word: %s \n", buffer);
+            update(buffer, 1);
+            start = i;
+        }
+        else if (word[i] != '-' && end + 1 == start) {
+            start = i;
+        }
+    }
+    end = strlen(word);
+    getString(buffer, word, start, end, 0);
+    printf("word: %s \n", buffer);
+    update(buffer, 1);
+}
+
+void cleanHyphen(char* word) {
+    char modWord[200];
+    int start = -1;
+    int end = strlen(word);
+    for (int i = 0; i < strlen(word); i++) {
+        if (word[i] != '-' && start == -1){
+            start = i;
+        }
+        else if (word[i] != '-') {
+            end = i + 1;
+        }
+    }
+    if (start != -1) {
+        getString(modWord, word, start, end, 0);
+        splitHyphen(modWord);
+    }
 }
 
 void wordCount(char* name) {
@@ -166,40 +210,23 @@ void wordCount(char* name) {
         int indexStart = 0; //start and end of word
         int indexEnd = 0;
         for (int i = 0; i < charsRead; i++) {
-            if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' 
-				|| buffer[i] == ','|| buffer[i] == '\n' || isdigit(buffer[i])) {
-                
+            if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' || buffer[i] == ')' || buffer[i] == '('
+				|| buffer[i] == ','|| buffer[i] == '\n' || isdigit(buffer[i]) || buffer[i] == '"' ) {
 				indexEnd = i;
                 if (i == 0 || buffer[i - 1] == '.' || buffer[i - 1] == ' ' || buffer[i - 1] == '!' 
-					|| buffer[i - 1] == '?' || buffer[i - 1] == ','|| buffer[i] == '\n' 
+					|| buffer[i - 1] == '?' || buffer[i - 1] == ','|| buffer[i] == '\n'  || buffer[i] == ')' || buffer[i] == '('
 					|| buffer[i - 1] == '"' || isdigit(buffer[i - 1])) {
                     
 					indexStart = i + 1;
                     continue;
                 }
                 getString(word, buffer, indexStart, indexEnd, unfinished); //a function to get the word
-                // if (strlen(word) == 1 && word[0] == '\'') { //word can't be a random apostophe
-                //     word[0] = '\n';
-                // }
-
-				char *modWord = word;
-				int effect = 0;
-				do {
-					effect = 0;
-					if(word[0] == '-') {
-						modWord = &modWord[1];
-						effect = 1;
-					}
-					if(modWord[strlen(word)-1] == '-') {
-						modWord[strlen(word)-1] == '\0';
-						effect = 1;
-					}
-				} while(effect);
-
-			
-
-
-				update(modWord, 1);
+                if (strlen(word) == 1 && word[0] == '\'') { //word can't be a random apostophe
+                    word[0] = '\n';
+                }
+                else {
+                    cleanHyphen(word);
+                }
                 indexStart = i + 1;
                 unfinished = 0; //finished the word
             }
@@ -209,6 +236,36 @@ void wordCount(char* name) {
         }
     }
     while (charsRead == 200); //!!!!!!
+}
+
+bool validFile(char* name) {
+    int nameLength = strlen(name);
+    if (nameLength > 5 && name[nameLength - 1] == 't' && name[nameLength - 2] == 'x' && name[nameLength - 3] == 't' && name[nameLength - 4] == '.' && name[0] != '.') {
+        for (int i = nameLength - 5; i >= 1; i--) {
+            if (name[i] == '.' && name[i - 1] == '/') {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool validDir(char* name) {
+    int nameLength = strlen(name);
+    if (name[0] != '.') {
+        for (int i = nameLength - 1; i >= 1; i--) {
+            if (name[i] == '.' && name[i - 1] == '/') {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 void traverse(char* fName) {
@@ -226,17 +283,19 @@ void traverse(char* fName) {
             snprintf(full_name, 300, "%s/%s", fName, entry->d_name);
 
             if (entry->d_type == DT_DIR) { //if the thing is a directory
-                if (strcmp(entry->d_name[0], ".") != 0 && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                if (validDir(full_name)) {
                     traverse(full_name);
+                    printf("directory: %s\n", full_name);
                 }
-            } else if(strcmp(entry->d_name[0], ".") != 0 && strcmp(&(entry->d_name)[strlen(entry->d_name) - 4], ".txt") == 0) {
+            } else if(validFile(full_name)) {
                 wordCount(full_name); //if it is not a directory
+                printf("file: %s\n", full_name);
             }
         }
 
         closedir(directory);
     }
-    else {
+    else if (validFile(fName)) {
         wordCount(fName); //happens when the file given is a file
     }
 }
