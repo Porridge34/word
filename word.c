@@ -52,7 +52,7 @@ void resize() {
 	free(oldTable);
 }
 
-void update(char* word, int k) {
+void update(char* word, int count) {
 
 	if(!table)
 	{
@@ -76,11 +76,11 @@ void update(char* word, int k) {
 		table[hashNum] = newNode;
 		tableFullness++;
 	}
-	else if(k == 1)
+	else if(count == 1)
 	{
 		ptr->count = ptr->count + 1;
 	}
-	else if(k == -1)
+	else if(count == -1)
 	{
 		ptr->count = -1;
 	}
@@ -155,7 +155,7 @@ void wordCount(char* name) {
     int fp = open(name, O_RDONLY);
     char buffer[200];
     int charsRead = -1;
-    char word[200];//idk how big the word size limit is
+    char word[200]; //idk how big the word size limit is
     int unfinished = 0; //In case the word is not finished by the end of the buffer, we need to know how long our unfinished word is so that we can complete the word next buffer
     do {
         charsRead = read(fp, buffer, 200);
@@ -166,17 +166,45 @@ void wordCount(char* name) {
         int indexStart = 0; //start and end of word
         int indexEnd = 0;
         for (int i = 0; i < charsRead; i++) {
-            if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' || buffer[i] == ','|| buffer[i] == '\n') {
-                indexEnd = i;
-                if (i == 0 || buffer[i - 1] == '.' || buffer[i - 1] == ' ' || buffer[i - 1] == '!' || buffer[i - 1] == '?' || buffer[i - 1] == ','|| buffer[i] == '\n') {
-                    indexStart = i + 1;
+            if(buffer[i] == '.' || buffer[i] == ' ' || buffer[i] == '!' || buffer[i] == '?' 
+				|| buffer[i] == ','|| buffer[i] == '\n' || buffer[i] == '0' || buffer[i] == '1' 
+				|| buffer[i] == '2' || buffer[i] == '3' || buffer[i] == '4' || buffer[i] == '5' 
+				|| buffer[i] == '6' || buffer[i] == '7' || buffer[i] == '8' || buffer[i] == '9') {
+                
+				indexEnd = i;
+                if (i == 0 || buffer[i - 1] == '.' || buffer[i - 1] == ' ' || buffer[i - 1] == '!' 
+					|| buffer[i - 1] == '?' || buffer[i - 1] == ','|| buffer[i] == '\n' 
+					|| buffer[i - 1] == '"' || buffer[i] == '0' || buffer[i] == '1' 
+					|| buffer[i] == '2' || buffer[i] == '3' || buffer[i] == '4' 
+					|| buffer[i] == '5' || buffer[i] == '6' || buffer[i] == '7'
+					|| buffer[i] == '8' || buffer[i] == '9') {
+                    
+					indexStart = i + 1;
                     continue;
                 }
                 getString(word, buffer, indexStart, indexEnd, unfinished); //a function to get the word
-                if (strlen(word) == 1 && word[0] == '\'') { //word can't be a random apostophe
-                    word[0] = '\n';
-                }
-				update(word, 1);
+                // if (strlen(word) == 1 && word[0] == '\'') { //word can't be a random apostophe
+                //     word[0] = '\n';
+                // }
+
+				char *modWord = word;
+				int effect = 0;
+				do {
+					effect = 0;
+					if(word[0] == '-') {
+						modWord = &modWord[1];
+						effect = 1;
+					}
+					if(modWord[strlen(word)-1] == '-') {
+						modWord[strlen(word)-1] == '\0';
+						effect = 1;
+					}
+				} while(effect);
+
+			
+
+
+				update(modWord, 1);
                 indexStart = i + 1;
                 unfinished = 0; //finished the word
             }
@@ -185,7 +213,7 @@ void wordCount(char* name) {
             unfinished = 200 - indexStart - 1;
         }
     }
-    while (charsRead == 200);
+    while (charsRead == 200); //!!!!!!
 }
 
 void traverse(char* fName) {
@@ -203,10 +231,10 @@ void traverse(char* fName) {
             snprintf(full_name, 300, "%s/%s", fName, entry->d_name);
 
             if (entry->d_type == DT_DIR) { //if the thing is a directory
-                if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                if (strcmp(entry->d_name[0], ".") != 0 && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                     traverse(full_name);
                 }
-            } else {
+            } else if(strcmp(entry->d_name[0], ".") != 0 && strcmp(&(entry->d_name)[strlen(entry->d_name) - 4], ".txt") == 0) {
                 wordCount(full_name); //if it is not a directory
             }
         }
